@@ -50,30 +50,44 @@ TiendaPolerasBDY1103_010V/
 └── python/
         ├── conexion.py
         ├── crud_producto.py
+        ├── crud_comprador.py
+        ├── crud_venta.py
         └── main.py
 ```
 
 ## 4. Base de datos
 
-La base de datos utiliza cuatro tablas principales:
+La base de datos utiliza siete tablas principales:
 
 - `MODELO`
 - `COLOR`
 - `TALLA`
 - `PRODUCTO`
+- `COMPRADOR`
+- `VENTA`
+- `DETALLE_VENTA`
 
 La tabla `PRODUCTO` relaciona un modelo, un color y una talla, además de almacenar el precio y el stock.
+
+La tabla `COMPRADOR` almacena rut, nombre y contacto de quien compra.
+
+La tabla `VENTA` pertenece a un comprador y guarda fecha y total.
+
+La tabla `DETALLE_VENTA` une una venta con sus productos, con cantidad y precio unitario.
 
 ### Relaciones
 
 ```text
 MODELO
    │
-   └────────── PRODUCTO
-                  │
-             ┌────┴────┐
-             │         │
-           COLOR     TALLA
+   └────────── PRODUCTO ─────── DETALLE_VENTA ─────── VENTA ─────── COMPRADOR
+                  │                   │
+             ┌────┴────┐               │
+             │         │               │
+           COLOR     TALLA             │
+                                       │
+                                    (precio_unitario,
+                                     cantidad)
 ```
 
 ## 5. Nomenclatura utilizada
@@ -215,11 +229,11 @@ El proyecto demuestra el uso de:
 - Packages
 - Triggers
 
-Los procedimientos y funciones permiten trabajar con la información de los productos.
+Los procedimientos y funciones permiten trabajar con la información de los productos, compradores y ventas.
 
-El package agrupa procedimientos y funciones relacionados con los productos.
+El package `pkg_productos` agrupa lo de productos. El package `pkg_ventas` agrupa lo de compradores y ventas.
 
-El trigger controla que el stock de un producto no sea negativo.
+El trigger `trg_controlar_stock` controla que el stock no sea negativo. El trigger `trg_validar_venta` exige comprador existente. El total de la venta lo recalcula `pkg_ventas.agregar_detalle_venta` (sin trigger row-level sobre el detalle para evitar ORA-04091).
 
 ## 7. Orden de ejecución de la base de datos
 
@@ -248,6 +262,9 @@ MODELO
 COLOR
 TALLA
 PRODUCTO
+COMPRADOR
+VENTA
+DETALLE_VENTA
 ```
 
 Debe ejecutarse conectado como:
@@ -262,7 +279,7 @@ TIENDA_POLERAS@localhost:1521/XEPDB1
 02_datos_prueba.sql
 ```
 
-Inserta los modelos, colores, tallas y productos utilizados para probar el proyecto.
+Inserta los modelos, colores, tallas, productos, compradores, ventas y detalles utilizados para probar el proyecto.
 
 ### 4. Ejecutar RECORD y VARRAY
 
@@ -272,8 +289,8 @@ Inserta los modelos, colores, tallas y productos utilizados para probar el proye
 
 Demuestra el uso de:
 
-- `RECORD`
-- `VARRAY`
+- `RECORD` (`t_producto`, `t_comprador`)
+- `VARRAY` (`t_tallas`, `t_productos_comprados`)
 
 ### 5. Ejecutar cursores
 
@@ -283,9 +300,9 @@ Demuestra el uso de:
 
 Demuestra:
 
-- Cursor sin parámetros
-- Cursor con parámetros
-- Loops anidados
+- Cursor sin parámetros (`c_modelos`, `c_compradores`)
+- Cursor con parámetros (`c_productos`, `c_ventas`)
+- Loops anidados (modelo->productos, comprador->ventas)
 
 ### 6. Ejecutar excepciones
 
@@ -295,8 +312,8 @@ Demuestra:
 
 Demuestra:
 
-- Excepción predefinida de Oracle
-- Excepción definida por el usuario
+- Excepciones predefinidas (`NO_DATA_FOUND`, `DUP_VAL_ON_INDEX`)
+- Excepciones de usuario (`e_stock_insuficiente`, `e_rut_invalido`, `e_comprador_sin_ventas`)
 
 ### 7. Crear procedimientos
 
@@ -309,6 +326,9 @@ Crea los procedimientos:
 ```text
 insertar_producto
 actualizar_stock
+insertar_comprador
+registrar_venta
+agregar_detalle_venta
 ```
 
 ### 8. Crear funciones
@@ -317,10 +337,12 @@ actualizar_stock
 07_functions.sql
 ```
 
-Crea la función:
+Crea las funciones:
 
 ```text
 calcular_valor_stock
+calcular_total_comprado
+obtener_ticket_promedio
 ```
 
 ### 9. Crear package
@@ -329,13 +351,14 @@ calcular_valor_stock
 08_package.sql
 ```
 
-Crea el package:
+Crea los packages:
 
 ```text
 pkg_productos
+pkg_ventas
 ```
 
-El package contiene procedimientos y funciones relacionados con los productos.
+El package `pkg_productos` contiene procedimientos y funciones de productos. El package `pkg_ventas` contiene lo de compradores y ventas.
 
 ### 10. Crear trigger
 
@@ -343,13 +366,16 @@ El package contiene procedimientos y funciones relacionados con los productos.
 09_triggers.sql
 ```
 
-Crea el trigger:
+Crea los triggers:
 
 ```text
 trg_controlar_stock
+trg_validar_venta
 ```
 
-Este trigger evita que un producto tenga un stock negativo.
+`trg_controlar_stock` evita stock negativo. `trg_validar_venta` exige comprador existente y total no negativo.
+
+Mitigación riesgo stock: `agregar_detalle_venta` valida con `SELECT FOR UPDATE` y `e_stock_insuficiente`, descuenta y recalcula en una transacción con `ROLLBACK`; `trg_controlar_stock` es la segunda barrera y el total nunca se ingresa a mano.
 
 ### Resumen del orden
 
@@ -391,6 +417,13 @@ Las operaciones sobre productos se encuentran en:
 
 ```text
 python/crud_producto.py
+```
+
+Las operaciones sobre compradores y ventas se encuentran en:
+
+```text
+python/crud_comprador.py
+python/crud_venta.py
 ```
 
 El programa principal se encuentra en:

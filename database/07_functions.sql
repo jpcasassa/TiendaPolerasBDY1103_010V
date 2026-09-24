@@ -31,3 +31,67 @@ BEGIN
 
 END;
 /
+
+-- =============================================
+-- FUNCION PARA CALCULAR EL TOTAL COMPRADO
+-- Suma todas las ventas de un comprador
+-- =============================================
+
+CREATE OR REPLACE FUNCTION calcular_total_comprado(
+    p_id_comprador COMPRADOR.ID_COMPRADOR%TYPE
+)
+RETURN NUMBER
+IS
+
+    -- Acumula el total de las ventas
+    v_total NUMBER := 0;
+
+BEGIN
+
+    -- Suma el total de ventas del comprador
+    SELECT NVL(SUM(total), 0)
+    INTO v_total
+    FROM VENTA
+    WHERE id_comprador = p_id_comprador;
+
+    -- Devuelve lo acumulado
+    RETURN v_total;
+
+END;
+/
+
+-- =============================================
+-- FUNCION PARA OBTENER EL TICKET PROMEDIO
+-- Promedio por venta, cero si no tiene ventas
+-- =============================================
+
+CREATE OR REPLACE FUNCTION obtener_ticket_promedio(
+    p_id_comprador COMPRADOR.ID_COMPRADOR%TYPE
+)
+RETURN NUMBER
+IS
+
+    -- Guarda cantidad de ventas y suma total
+    v_cantidad NUMBER := 0;
+    v_suma NUMBER := 0;
+
+BEGIN
+
+    -- Cuenta ventas y suma sus totales
+    SELECT COUNT(*), NVL(SUM(total), 0)
+    INTO v_cantidad, v_suma
+    FROM VENTA
+    WHERE id_comprador = p_id_comprador;
+
+    -- Evita división por cero
+    IF v_cantidad = 0 THEN
+
+        RETURN 0;
+
+    END IF;
+
+    -- Devuelve el promedio por venta
+    RETURN v_suma / v_cantidad;
+
+END;
+/

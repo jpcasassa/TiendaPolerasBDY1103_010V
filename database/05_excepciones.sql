@@ -87,3 +87,115 @@ EXCEPTION
 
 END;
 /
+
+-- =============================================
+-- EXCEPCION PREDEFINIDA: COMPRADOR DUPLICADO
+-- =============================================
+
+DECLARE
+
+    -- Variables con datos de un comprador ya existente
+    v_id_comprador COMPRADOR.ID_COMPRADOR%TYPE := 99;
+    v_rut COMPRADOR.RUT%TYPE := '12345678-9';
+    v_nombre COMPRADOR.NOMBRE%TYPE := 'Duplicado';
+
+BEGIN
+
+    -- Intenta insertar un RUT que ya existe
+    INSERT INTO COMPRADOR (id_comprador, rut, nombre)
+    VALUES (v_id_comprador, v_rut, v_nombre);
+
+    ROLLBACK;
+
+EXCEPTION
+
+    -- Controla el error cuando el RUT o email ya existe
+    WHEN DUP_VAL_ON_INDEX THEN
+
+        ROLLBACK;
+
+        DBMS_OUTPUT.PUT_LINE(
+            'ERROR: El RUT o email del comprador ya está registrado.'
+        );
+
+END;
+/
+
+
+-- =============================================
+-- EXCEPCIONES DE USUARIO: VENTA A COMPRADOR
+-- =============================================
+
+DECLARE
+
+    -- Comprador a evaluar
+    v_id_comprador COMPRADOR.ID_COMPRADOR%TYPE := 3;
+
+    -- Total acumulado y cantidad de ventas
+    v_total NUMBER := 0;
+    v_cantidad_ventas NUMBER := 0;
+
+    -- Excepción cuando el RUT no tiene formato válido
+    e_rut_invalido EXCEPTION;
+
+    -- Excepción cuando el comprador no tiene ventas
+    e_comprador_sin_ventas EXCEPTION;
+
+    -- RUT a validar (debe contener guion)
+    v_rut COMPRADOR.RUT%TYPE;
+
+BEGIN
+
+    -- Obtiene el RUT del comprador
+    SELECT rut
+    INTO v_rut
+    FROM COMPRADOR
+    WHERE id_comprador = v_id_comprador;
+
+    -- Verifica formato mínimo del RUT con dígito verificador
+    IF INSTR(v_rut, '-') = 0 THEN
+
+        RAISE e_rut_invalido;
+
+    END IF;
+
+    -- Suma las ventas del comprador
+    SELECT COUNT(*), NVL(SUM(total), 0)
+    INTO v_cantidad_ventas, v_total
+    FROM VENTA
+    WHERE id_comprador = v_id_comprador;
+
+    -- Verifica si el comprador tiene movimientos
+    IF v_cantidad_ventas = 0 THEN
+
+        RAISE e_comprador_sin_ventas;
+
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Comprador ' || v_id_comprador ||
+        ' total: $' || v_total
+    );
+
+EXCEPTION
+
+    WHEN NO_DATA_FOUND THEN
+
+        DBMS_OUTPUT.PUT_LINE(
+            'ERROR: No se encontró el comprador solicitado.'
+        );
+
+    WHEN e_rut_invalido THEN
+
+        DBMS_OUTPUT.PUT_LINE(
+            'ERROR: El RUT del comprador no tiene formato válido.'
+        );
+
+    WHEN e_comprador_sin_ventas THEN
+
+        DBMS_OUTPUT.PUT_LINE(
+            'ERROR: El comprador no registra ventas.'
+        );
+
+END;
+/

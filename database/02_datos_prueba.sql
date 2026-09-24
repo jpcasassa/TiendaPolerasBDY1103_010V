@@ -105,4 +105,74 @@ INSERT INTO PRODUCTO (
 )
 VALUES (5, 3, 4, 1, 22990, 20);
 
+
+-- =============================================
+-- DATOS DE COMPRADOR
+-- =============================================
+
+INSERT INTO COMPRADOR (
+    id_comprador,
+    rut,
+    nombre,
+    email,
+    telefono,
+    direccion
+)
+VALUES (1, '12345678-9', 'Juan Perez', 'juan.perez@mail.cl', '912345678', 'Alameda 123, Santiago');
+
+INSERT INTO COMPRADOR (
+    id_comprador,
+    rut,
+    nombre,
+    email,
+    telefono,
+    direccion
+)
+VALUES (2, '87654321-4', 'Maria Soto', 'maria.soto@mail.cl', '987654321', 'Providencia 456, Santiago');
+
+INSERT INTO COMPRADOR (
+    id_comprador,
+    rut,
+    nombre,
+    email,
+    telefono,
+    direccion
+)
+VALUES (3, '11222333-4', 'Diego Fuentes', 'diego.fuentes@mail.cl', '955544433', 'Maipu 789, Santiago');
+
+
+-- =============================================
+-- DATOS DE VENTA
+-- Total calculado desde el detalle:
+-- Venta 101: 2x19990 + 1x24990 = 64970
+-- Venta 102: 1x22990 = 22990
+-- =============================================
+
+INSERT INTO VENTA (id_venta, id_comprador, fecha_venta, total)
+VALUES (101, 1, SYSDATE, 64970);
+
+INSERT INTO VENTA (id_venta, id_comprador, fecha_venta, total)
+VALUES (102, 2, SYSDATE, 22990);
+
+
+-- =============================================
+-- DATOS DE DETALLE_VENTA
+-- Precio unitario = precio vigente de PRODUCTO
+-- =============================================
+
+INSERT INTO DETALLE_VENTA (
+    id_detalle, id_venta, id_producto, cantidad, precio_unitario
+)
+VALUES (1001, 101, 1, 2, 19990);
+
+INSERT INTO DETALLE_VENTA (
+    id_detalle, id_venta, id_producto, cantidad, precio_unitario
+)
+VALUES (1002, 101, 3, 1, 24990);
+
+INSERT INTO DETALLE_VENTA (
+    id_detalle, id_venta, id_producto, cantidad, precio_unitario
+)
+VALUES (1003, 102, 5, 1, 22990);
+
 COMMIT;

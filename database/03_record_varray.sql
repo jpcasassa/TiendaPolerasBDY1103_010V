@@ -91,3 +91,93 @@ BEGIN
 
 END;
 /
+
+-- =============================================
+-- RECORD DE COMPRADOR
+-- =============================================
+
+DECLARE
+
+    -- Guarda la ficha de un comprador con su total comprado
+    TYPE t_comprador IS RECORD (
+        id_comprador  COMPRADOR.ID_COMPRADOR%TYPE,
+        rut           COMPRADOR.RUT%TYPE,
+        nombre        COMPRADOR.NOMBRE%TYPE,
+        email         COMPRADOR.EMAIL%TYPE,
+        total_compras NUMBER
+    );
+
+    v_comprador t_comprador;
+
+BEGIN
+
+    -- Busca el comprador y suma sus ventas en una sola estructura
+    SELECT
+        c.id_comprador,
+        c.rut,
+        c.nombre,
+        c.email,
+        NVL(SUM(v.total), 0)
+    INTO
+        v_comprador.id_comprador,
+        v_comprador.rut,
+        v_comprador.nombre,
+        v_comprador.email,
+        v_comprador.total_compras
+    FROM COMPRADOR c
+    LEFT JOIN VENTA v
+        ON v.id_comprador = c.id_comprador
+    WHERE c.id_comprador = 1
+    GROUP BY c.id_comprador, c.rut, c.nombre, c.email;
+
+    DBMS_OUTPUT.PUT_LINE('--- COMPRADOR ---');
+    DBMS_OUTPUT.PUT_LINE('ID: ' || v_comprador.id_comprador);
+    DBMS_OUTPUT.PUT_LINE('RUT: ' || v_comprador.rut);
+    DBMS_OUTPUT.PUT_LINE('Nombre: ' || v_comprador.nombre);
+    DBMS_OUTPUT.PUT_LINE('Email: ' || v_comprador.email);
+    DBMS_OUTPUT.PUT_LINE('Total compras: $' || v_comprador.total_compras);
+
+END;
+/
+
+
+-- =============================================
+-- VARRAY DE PRODUCTOS COMPRADOS
+-- =============================================
+
+DECLARE
+
+    -- Almacena hasta diez productos comprados en una venta
+    TYPE t_productos_comprados IS VARRAY(10) OF VARCHAR2(50);
+
+    v_productos t_productos_comprados := t_productos_comprados();
+
+    -- Guarda el id de la venta a listar
+    v_id_venta VENTA.ID_VENTA%TYPE := 101;
+
+BEGIN
+
+    -- Carga los modelos comprados en la venta indicada
+    SELECT m.nombre
+    BULK COLLECT INTO v_productos
+    FROM DETALLE_VENTA d
+    JOIN PRODUCTO p
+        ON d.id_producto = p.id_producto
+    JOIN MODELO m
+        ON p.id_modelo = m.id_modelo
+    WHERE d.id_venta = v_id_venta
+    AND ROWNUM <= 10;
+
+    DBMS_OUTPUT.PUT_LINE('--- PRODUCTOS VENTA ' || v_id_venta || ' ---');
+
+    -- Recorre las posiciones del VARRAY
+    FOR i IN 1 .. v_productos.COUNT LOOP
+
+        DBMS_OUTPUT.PUT_LINE(
+            'Producto ' || i || ': ' || v_productos(i)
+        );
+
+    END LOOP;
+
+END;
+/
