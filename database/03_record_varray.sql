@@ -7,17 +7,19 @@
 -- =============================================
 -- RECORD
 -- =============================================
+-- Se usan tipos simples dentro del RECORD para evitar dependencias
+-- de %TYPE en la declaracion local del bloque anonimo.
 
 DECLARE
 
     -- Guarda los datos de un producto en una sola estructura
     TYPE t_producto IS RECORD (
-        id_producto PRODUCTO.ID_PRODUCTO%TYPE,
-        modelo     MODELO.NOMBRE%TYPE,
-        color      COLOR.NOMBRE%TYPE,
-        talla      TALLA.NOMBRE%TYPE,
-        precio     PRODUCTO.PRECIO%TYPE,
-        stock      PRODUCTO.STOCK%TYPE
+        id_producto     NUMBER,
+        modelo          VARCHAR2(50),
+        color           VARCHAR2(30),
+        talla           VARCHAR2(10),
+        precio          NUMBER(10,2),
+        stock           NUMBER
     );
 
     v_producto t_producto;
@@ -100,10 +102,10 @@ DECLARE
 
     -- Guarda la ficha de un comprador con su total comprado
     TYPE t_comprador IS RECORD (
-        id_comprador  COMPRADOR.ID_COMPRADOR%TYPE,
-        rut           COMPRADOR.RUT%TYPE,
-        nombre        COMPRADOR.NOMBRE%TYPE,
-        email         COMPRADOR.EMAIL%TYPE,
+        id_comprador  NUMBER,
+        rut           VARCHAR2(12),
+        nombre        VARCHAR2(100),
+        email         VARCHAR2(100),
         total_compras NUMBER
     );
 
